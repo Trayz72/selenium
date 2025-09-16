@@ -7,7 +7,6 @@ from selenium.webdriver.chrome.options import Options
 import time
 
 print("Starting Selenium Demo (Headless Mode)")
-
 chrome_options = Options()
 chrome_options.add_argument("--headless")  
 chrome_options.add_argument("--no-sandbox")
@@ -19,7 +18,6 @@ driver = webdriver.Chrome(service=service, options=chrome_options)
 print("Loading login page...")
 driver.get("http://127.0.0.1:5050")
 time.sleep(1)
-
 
 print("Logging in...")
 driver.find_element(By.NAME, "username").send_keys("admin")
