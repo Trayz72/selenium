@@ -1,13 +1,11 @@
-# Base image with Python
-FROM python:3.10-slim
+############################
+# STAGE 1 — Test Image
+############################
+FROM python:3.10-slim AS test
 
-# Avoid prompts during install
 ENV DEBIAN_FRONTEND=noninteractive
-
-# Set working directory
 WORKDIR /app
 
-# Install system dependencies needed for Chrome & Selenium
 RUN apt-get update && apt-get install -y \
     wget \
     unzip \
@@ -32,7 +30,6 @@ RUN apt-get update && apt-get install -y \
     --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Google Chrome
 RUN wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor > /usr/share/keyrings/chrome.gpg \
     && echo "deb [arch=amd64 signed-by=/usr/share/keyrings/chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" \
     > /etc/apt/sources.list.d/google-chrome.list \
@@ -40,17 +37,22 @@ RUN wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | gpg --dearm
     && apt-get install -y google-chrome-stable \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements first (better caching)
 COPY requirements.txt .
-
-# Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy project files
 COPY . .
 
-# Expose Flask port
-EXPOSE 5000
+############################
+# STAGE 2 — Runtime Image
+############################
+FROM python:3.10-slim AS runtime
 
-# Default command (can be overridden)
+WORKDIR /app
+
+RUN pip install --no-cache-dir flask
+
+COPY app.py .
+COPY templates ./templates
+
+EXPOSE 5000
 CMD ["python", "app.py"]

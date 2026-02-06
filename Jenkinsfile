@@ -4,6 +4,7 @@ pipeline {
     environment {
         IMAGE_NAME = "trayz72/selenium-app"
         IMAGE_TAG  = "${BUILD_NUMBER}"
+        TEST_IMAGE = "selenium-test:${BUILD_NUMBER}"
     }
 
     stages {
@@ -14,11 +15,11 @@ pipeline {
             }
         }
 
-        stage('Build Docker Image') {
+        stage('Build Test Image') {
             steps {
                 sh '''
-                  echo "Building Docker image..."
-                  docker build -t $IMAGE_NAME:$IMAGE_TAG .
+                  echo "Building TEST image (with Chrome + Selenium)..."
+                  docker build --target test -t $TEST_IMAGE .
                 '''
             }
         }
@@ -26,10 +27,17 @@ pipeline {
         stage('Run Selenium UI Tests') {
             steps {
                 sh '''
-                  echo "Running Selenium tests inside container..."
-                  docker run --rm \
-                    $IMAGE_NAME:$IMAGE_TAG \
-                    pytest tests/
+                  echo "Running Selenium tests inside TEST image..."
+                  docker run --rm $TEST_IMAGE pytest tests/
+                '''
+            }
+        }
+
+        stage('Build Runtime Image') {
+            steps {
+                sh '''
+                  echo "Building RUNTIME image (lightweight)..."
+                  docker build --target runtime -t $IMAGE_NAME:$IMAGE_TAG .
                 '''
             }
         }
@@ -51,7 +59,7 @@ pipeline {
         stage('Push Image to Docker Hub') {
             steps {
                 sh '''
-                  echo "Pushing image to Docker Hub..."
+                  echo "Pushing lightweight runtime image..."
                   docker push $IMAGE_NAME:$IMAGE_TAG
 
                   docker tag $IMAGE_NAME:$IMAGE_TAG $IMAGE_NAME:latest
@@ -64,13 +72,13 @@ pipeline {
     post {
         always {
             sh 'docker logout || true'
+            sh 'docker image prune -f || true'
         }
         success {
-            echo '✅ Docker image built, tested, and pushed successfully!'
+            echo 'Tests passed and LIGHTWEIGHT image pushed successfully!'
         }
         failure {
-            echo '❌ Pipeline failed. Check logs above.'
+            echo 'Pipeline failed. Check logs above.'
         }
     }
 }
-
