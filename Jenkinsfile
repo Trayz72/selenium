@@ -72,7 +72,7 @@ pipeline {
     post {
         always {
             sh 'docker logout || true'
-            sh 'docker image prune -f || true'
+            sh 'docker system prune -f || true'
         }
         success {
             echo 'Tests passed and LIGHTWEIGHT image pushed successfully!'
