@@ -1,6 +1,3 @@
-############################
-# STAGE 1 — Test Image
-############################
 FROM python:3.10-slim AS test
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -42,9 +39,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-############################
-# STAGE 2 — Runtime Image
-############################
+
 FROM python:3.10-slim AS runtime
 
 WORKDIR /app
