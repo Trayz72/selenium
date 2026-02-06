@@ -9,4 +9,4 @@ def login():
     return render_template("login.html", username=username, password=password)
 
 if __name__ == "__main__":
-    app.run(debug=True,port=5050)
+    app.run(debug=True,port=5000)
