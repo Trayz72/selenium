@@ -5,29 +5,41 @@ from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 import time
+import subprocess
+import os
+import signal
 
-print("Starting Selenium Demo (Headless Mode)")
-chrome_options = Options()
-chrome_options.add_argument("--headless")  
-chrome_options.add_argument("--no-sandbox")
-chrome_options.add_argument("--disable-dev-shm-usage")
+def test_login():
+    print("Starting Flask app...")
+    flask_process = subprocess.Popen(
+        ["python", "app.py"],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL
+    )
 
-service = Service(ChromeDriverManager().install())
-driver = webdriver.Chrome(service=service, options=chrome_options)
+    time.sleep(3)  # give Flask time to start
 
-print("Loading login page...")
-driver.get("http://127.0.0.1:5050")
-time.sleep(1)
+    print("Starting Selenium (Headless)")
+    chrome_options = Options()
+    chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-dev-shm-usage")
 
-print("Logging in...")
-driver.find_element(By.NAME, "username").send_keys("admin")
-driver.find_element(By.NAME, "password").send_keys("secret" + Keys.RETURN)
-time.sleep(1)
+    service = Service(ChromeDriverManager().install())
+    driver = webdriver.Chrome(service=service, options=chrome_options)
 
-if "Login successful!" in driver.page_source:
-    print("Test Passed! Login successful!")
-else:
-    print("Test Failed - Login message not found")
+    try:
+        print("Opening login page...")
+        driver.get("http://localhost:5000")
 
-driver.quit()
-print("Demo Complete!")
+        driver.find_element(By.NAME, "username").send_keys("admin")
+        driver.find_element(By.NAME, "password").send_keys("secret" + Keys.RETURN)
+
+        time.sleep(1)
+
+        assert "Login successful!" in driver.page_source
+
+    finally:
+        driver.quit()
+        flask_process.terminate()
+        flask_process.wait()
